@@ -1,30 +1,79 @@
 # FlakeTax
 
-A friend-group accountability engine built with Java 21, Spring Boot, Spring Data JPA, PostgreSQL, and vanilla JavaScript.
+FlakeTax is a Spring Boot application for managing accountability challenges between friends using virtual points.
 
-## Core Features
+The idea is straightforward. A group agrees on a challenge, each participant commits a fixed number of points, and everyone has until the deadline to submit proof. Submissions are reviewed before the points are distributed.
 
-- **Pact Creation & Host Stake:** Creating a pact locks the host's stake immediately and opens the pool.
-- **Social Discovery:** Discover open pacts, browse challenges hosted by accepted friends, or look up pacts by ID.
-- **Friend System:** Mutual friend requests and removals using handles.
-- **Proof & Media Storage:** Submit text notes or proof images (JPG, PNG, WebP up to 2 MB) saved to a configured storage path.
-- **Anti-Self-Approval Review:** Hosts review participant proofs; participant consensus or alternate members review host proofs to prevent self-approval.
-- **Deterministic Settlement:** Split logic divides the pot evenly among approved participants with remainder handling; open pacts can be cancelled for full stake refunds before deadlines.
-- **Archival vs. Audit:** Pacts can be hidden from active lists while preserving immutable ledger entries for balance auditing.
+I built the project primarily to work through backend problems involving concurrent requests, transactional consistency, authorization, scheduled jobs and persistent state.
 
-## Local Setup (Windows / IntelliJ)
+## How it works
 
-### Prerequisites
-- Java 21
-- PostgreSQL 17 (local or Docker)
-- IntelliJ IDEA / Maven
+Each user starts with 1,000 virtual points.
 
-### Configuration
-Set the following environment variables in your IntelliJ Run Configuration (`FlakeTaxApp`):
+When a participant joins a pact, the application deducts their stake from their available balance and adds it to the pact's pot. These operations are handled within a database transaction.
 
-```text
-DB_URL=jdbc:postgresql://localhost:5432/flaketax
-DB_USER=flaketax
-DB_PASSWORD=your_local_password
-REVIEW_MINUTES=1
-PROOF_DIR=./data/proofs
+Participants can submit a note or image before the deadline. Approved participants become eligible for a payout once the review period closes. If nobody qualifies, the stakes are refunded.
+
+The point movements are recorded separately from the current account balances. This provides an audit trail for deposits, stakes, payouts and refunds.
+
+## Backend design
+
+The application uses Java 21, Spring Boot, Spring Data JPA and PostgreSQL.
+
+The main responsibilities are separated into controllers, services and repositories.
+
+- **Spring Security** handles authentication and access control.
+- **JPA and Hibernate** manage persistence and entity relationships.
+- **PostgreSQL** stores accounts, pacts, memberships and ledger entries.
+- **Flyway** manages schema changes.
+- **Spring scheduling** processes pacts whose review periods have ended.
+- **Database transactions and row-level locking** coordinate balance updates and settlement.
+
+Settlement is designed to be idempotent. Repeating a successful settlement request should not generate another payout.
+
+The browser interface is built with plain HTML, CSS and JavaScript. It communicates with the backend through REST endpoints.
+
+## Running locally
+
+The project requires Java 21, Maven, PostgreSQL and Docker Desktop for the container-based integration tests.
+
+Start the development database:
+
+```bash
+docker compose up -d db
+```
+
+Run the Spring Boot application from IntelliJ, or use:
+
+```bash
+mvn spring-boot:run
+```
+
+The application runs at:
+
+`http://localhost:8080`
+
+Database connection settings can be supplied through environment variables.
+
+For local testing, `REVIEW_MINUTES=1` shortens the review period for newly created pacts.
+
+## Testing
+
+The project includes JUnit tests and PostgreSQL integration tests using Testcontainers.
+
+```bash
+mvn test
+mvn verify
+```
+
+The main cases worth checking are duplicate settlement requests, concurrent balance updates, refunds when nobody qualifies, deadline enforcement and account authorization.
+
+The API can also be exercised manually through Postman.
+
+## Current scope
+
+FlakeTax uses virtual points, not real currency.
+
+The current authentication and file-storage setup is intended for local development. A public deployment would require additional security work, including HTTPS, stronger session management, rate limiting and operational monitoring.
+
+The project is an exercise in building and reasoning about a stateful backend, particularly the parts where incorrect transaction handling could produce inconsistent balances.
