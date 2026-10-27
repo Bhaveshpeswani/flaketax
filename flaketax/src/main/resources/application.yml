@@ -1,0 +1,31 @@
+server:
+  port: ${PORT:8080}
+spring:
+  application:
+    name: flaketax
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5434/flaketax}
+    username: ${DB_USER:flaketax}
+    password: ${DB_PASSWORD:local_only_change_me}
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+  flyway:
+    enabled: true
+  servlet:
+    multipart:
+      max-file-size: 2MB
+      max-request-size: 3MB
+  jackson:
+    datatype:
+      datetime:
+        write-dates-as-timestamps: false
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+flaketax:
+  review-minutes: ${REVIEW_MINUTES:1440}
+  proof-dir: ${PROOF_DIR:./data/proofs}

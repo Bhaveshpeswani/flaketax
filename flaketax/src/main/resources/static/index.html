@@ -1,0 +1,157 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>FlakeTax | Pacts</title>
+    <link rel="stylesheet" href="/style.css">
+    <script src="/app.js" defer></script>
+</head>
+<body>
+<header class="top">
+    <div class="top-inner"><strong class="brand">FlakeTax</strong><span>Make plans with friends and keep score.</span></div>
+</header>
+<div class="layout">
+    <aside class="side">
+        <section>
+            <h2>Account</h2>
+            <form id="loginForm">
+                <label for="handle">Username</label>
+                <input id="handle" autocomplete="username" maxlength="20" required placeholder="mar1">
+                <label for="password">Password</label>
+                <input id="password" type="password" autocomplete="current-password" minlength="10" required>
+                <div class="actions">
+                    <button type="submit">Sign in</button>
+                    <button type="button" id="signup" class="outline">Create account</button>
+                </div>
+            </form>
+            <p id="who" class="quiet">Not signed in</p>
+            <button id="logout" class="plain" type="button" hidden>Sign out</button>
+            <button id="closeAccount" class="plain danger" type="button" hidden>Close account</button>
+        </section>
+        <section>
+            <h2>My points</h2>
+            <p id="walletValue" class="balance">Sign in to see balance</p>
+            <button id="wallet" class="outline" type="button">View history</button>
+            <table id="history" hidden>
+                <thead><tr><th>Activity</th><th class="number">Points</th></tr></thead>
+                <tbody id="ledgerRows"></tbody>
+            </table>
+        </section>
+        <section>
+            <h2>Friends</h2>
+            <form id="friendForm">
+                <label for="friendName">Add by username</label>
+                <input id="friendName" placeholder="ang1" required>
+                <button type="submit" class="outline">Send request</button>
+            </form>
+            <button id="loadFriends" type="button" class="plain">View friends and requests</button>
+            <div id="friendList" class="compact-list"></div>
+        </section>
+    </aside>
+
+    <main>
+        <div class="intro">
+            <h1>Your pacts</h1>
+            <p>Set a goal, stake points and let your friends judge the result.</p>
+        </div>
+        <section>
+            <h2>Start a pact</h2>
+            <form id="pactForm">
+                <label for="title">Goal</label>
+                <input id="title" maxlength="120" placeholder="Run three times this week" required>
+                <div class="two-col">
+                    <div>
+                        <label for="stake">Points per player</label>
+                        <input id="stake" type="number" min="1" max="1000" value="100" required>
+                    </div>
+                    <div>
+                        <label for="duration">Proof deadline, minutes from now</label>
+                        <input id="duration" type="number" min="1" max="43200" value="5" required>
+                    </div>
+                </div>
+                <p class="help">You join automatically and stake your own points. A friend reviews your proof. You review theirs.</p>
+                <button type="submit">Create pact</button>
+            </form>
+        </section>
+
+        <section>
+            <h2>Find challenges</h2>
+            <div class="actions">
+                <button id="openPacts" type="button" class="outline">Open pacts</button>
+                <button id="friendPacts" type="button" class="outline">Friends' pacts</button>
+                <button id="mine" type="button" class="outline">My pacts</button>
+            </div>
+            <div id="pactList" class="compact-list" aria-live="polite"></div>
+            <form id="lookupForm" class="lookup">
+                <label for="pactId">Open by pact number</label>
+                <div class="actions">
+                    <input id="pactId" type="number" min="1" placeholder="Pact number" required>
+                    <button type="submit" class="outline">Open</button>
+                    <button id="join" type="button">Join</button>
+                </div>
+            </form>
+        </section>
+
+        <section id="pactDetail" hidden>
+            <div class="detail-head"><h2 id="detailTitle">Pact</h2><span id="pactStatus"></span></div>
+            <p id="pactNumber" class="quiet"></p>
+            <div class="stats">
+                <div><span>Created by</span><strong id="pactHost"></strong></div>
+                <div><span>Stake</span><strong id="pactStake"></strong></div>
+                <div><span>In the pot</span><strong id="pactPot"></strong></div>
+                <div><span>Proof closes</span><strong id="pactDeadline"></strong></div>
+                <div><span>Review closes</span><strong id="pactReview"></strong></div>
+                <div><span>Time left</span><strong id="countdown"></strong></div>
+            </div>
+            <h3>Players and proof</h3>
+            <div class="table-wrap"><table>
+                <thead><tr><th>Player</th><th>State</th><th>Proof</th><th>Image</th></tr></thead>
+                <tbody id="members"></tbody>
+            </table></div>
+            <div id="photoPreview" class="preview" hidden>
+                <button id="closePhoto" class="outline" type="button">Close image</button>
+                <img id="photoImage" alt="Submitted proof image">
+            </div>
+
+            <form id="proofForm" hidden>
+                <h3>Submit proof</h3>
+                <label for="note">Note</label>
+                <textarea id="note" rows="3" maxlength="500" placeholder="What did you finish?"></textarea>
+                <label for="photo">Photo, optional. PNG, JPG or WebP, 2 MB max</label>
+                <input id="photo" type="file" accept="image/png,image/jpeg,image/webp">
+                <button type="submit">Submit proof</button>
+            </form>
+
+            <form id="reviewForm" hidden>
+                <h3>Review a player's proof</h3>
+                <label for="playerId">Player</label>
+                <select id="playerId" required></select>
+                <label for="approved">Decision</label>
+                <select id="approved"><option value="true">Approve</option><option value="false">Reject</option></select>
+                <button type="submit">Save decision</button>
+            </form>
+
+            <div id="hostTools" class="host-tools" hidden>
+                <h3>Host controls</h3>
+                <form id="timeForm" class="time-form">
+                    <label for="newMinutes">Change the deadline, minutes from now</label>
+                    <div class="actions"><input id="newMinutes" type="number" min="1" max="1440" value="5" required>
+                        <button type="submit" class="outline">Update time</button></div>
+                </form>
+                <div class="actions">
+                    <button id="settle" type="button" class="outline">Settle</button>
+                    <button id="cancel" type="button" class="outline danger">Cancel and refund</button>
+                    <button id="archive" type="button" class="outline danger">Remove from list</button>
+                </div>
+                <p id="settleNote" class="help"></p>
+            </div>
+        </section>
+        <p id="message" class="message" role="status" aria-live="polite">Sign in to start.</p>
+    </main>
+</div>
+<footer><p>Local portfolio demo. Points cannot be exchanged for money.</p>
+    <nav><a href="/privacy.html">Privacy</a><a href="/terms.html">Terms</a></nav>
+</footer>
+</body>
+</html>
